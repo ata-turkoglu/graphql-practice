@@ -93,8 +93,13 @@ const typeDefs = `
 
     type Mutation {
         createUser (data: createUserInput!): User!
+        deleteUser (id:ID!): User!
+
         createPost (data: createPostInput!): Post!
+        deletePost (id:ID!): Post!
+
         createComment (data: createCommentInput!): Comment!
+        deleteComment (id:ID!): Comment!
     }
 
     input createUserInput{
@@ -186,6 +191,26 @@ const resolvers = {
             users.push(user);
             return user;
         },
+        deleteUser(parent, args, context, info) {
+            const userIndex = users.findIndex((user) => user.id == args.id);
+            if (userIndex === -1) throw new Error("User not found.");
+
+            const deletedUsers = users.slice(userIndex, 1);
+
+            posts = posts.filter((post) => {
+                const match = post.author == args.id;
+
+                if (match) {
+                    comments = comments.filter(
+                        (comment) => comment.post != post.id
+                    );
+                }
+
+                return !match;
+            });
+
+            return deletedUsers[0];
+        },
         createPost(parent, args, context, info) {
             const userExists = users.find(
                 (user) => user.id == args.data.author
@@ -197,6 +222,16 @@ const resolvers = {
             };
             posts.push(post);
             return post;
+        },
+        deletePost(parent, args, context, info) {
+            const postIndex = posts.findIndex((post) => post.id == args.id);
+            if (postIndex === -1) throw new Error("Post not found.");
+
+            const postDeleteds = posts.splice(postIndex, 1);
+
+            comments = comments.filter((comment) => comment.post != args.id);
+
+            return postDeleteds[0];
         },
         createComment(parent, args, context, info) {
             const userExists = users.find((user) => user.id == args.author);
@@ -214,6 +249,16 @@ const resolvers = {
 
             comments.push(comment);
             return comment;
+        },
+        deleteComment(parent, args, context, info) {
+            const commentIndex = comments.findIndex(
+                (comment) => comment.id == args.id
+            );
+            if (!commentIndex) throw new Error("Comment not found.");
+
+            const deletedComments = comments.splice(commentIndex, 1);
+
+            return deletedComments[0];
         },
     },
     Post: {
