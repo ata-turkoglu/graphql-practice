@@ -1,4 +1,9 @@
 const Subscription = {
+    post: {
+        subscribe(parent, args, { db, pubSub }, info) {
+            return pubSub.asyncIterator("post");
+        },
+    },
     comment: {
         subscribe(parent, { postId }, { db, pubSub }, info) {
             const post = db.posts.find(
